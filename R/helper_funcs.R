@@ -210,7 +210,7 @@ weighted.scale <- function(X, w = rep(1, nrow(X))) {
   if (identical(X[, 1], rep(1, nrow(X)))) {
     # intercept
     has_intercept <- TRUE
-    X <- X[, -1]
+    X <- X[, -1, drop = FALSE]
   } else has_intercept <- FALSE
   m <- apply(X, 2, stats::weighted.mean, w)
   s <- apply(X, 2, weighted.sd, w)
