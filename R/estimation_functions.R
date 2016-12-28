@@ -314,7 +314,8 @@ alpha.est.mixed <- function(y, eta, w) {
 #' fit$vcov
 #' @export pgee.fit
 pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
-                     wctype = "Ind", family = "Gaussian", lambda = 0,
+                     wctype = "Ind", family = "Gaussian", 
+                     lambda = ifelse(family == "Mixed", rep(0, 2), 0),
                      eps = 1e-06, maxiter = 1000, tol.coef = 1e-03,
                      tol.score = 1e-03, init = NULL,
                      standardize = TRUE, penalty = "SCAD", weights = rep(1, N),
