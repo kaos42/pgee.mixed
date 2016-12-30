@@ -5,10 +5,10 @@
 \title{Penalized Generalized Estimating Equations}
 \usage{
 pgee.fit(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
-  wctype = "Ind", family = "Gaussian", lambda = 0, eps = 1e-06,
-  maxiter = 1000, tol.coef = 0.001, tol.score = 0.001, init = NULL,
-  standardize = TRUE, penalty = "SCAD", weights = rep(1, N),
-  FDR = FALSE, fdr.corr = NULL, fdr.type = "all")
+  wctype = "Ind", family = "Gaussian", lambda = switch(family, Mixed =
+  rep(0, 2), 0), eps = 1e-06, maxiter = 1000, tol.coef = 0.001,
+  tol.score = 0.001, init = NULL, standardize = TRUE, penalty = "SCAD",
+  weights = rep(1, N), FDR = FALSE, fdr.corr = NULL, fdr.type = "all")
 }
 \arguments{
 \item{N}{Number of clusters.}
