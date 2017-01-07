@@ -48,8 +48,9 @@ varfn <- function(mu, family) {
 }
 
 # penalty derivaritve functions, q
+# ridge is the weight to the ridge component.
 # Vectorized below to q_SCAD, q_MCP, etc. functions
-foo_SCAD <- function(theta, lambda, a = 3.7) {
+foo_SCAD <- function(theta, lambda, ridge, a = 3.7) {
   if (a <= 2)
     stop("Error in foo_SCAD: \"a\" must be > 2")
   if (lambda < 0)
@@ -64,11 +65,12 @@ foo_SCAD <- function(theta, lambda, a = 3.7) {
   } else {
     Q <- lambda
   }
+  q <- (1-ridge)*Q + (ridge)*lambda*theta 
 }
 
 q_SCAD <- Vectorize(foo_SCAD, "theta")
 
-foo_MCP <- function(theta, lambda, a = 3) {
+foo_MCP <- function(theta, lambda, ridge, a = 3) {
   if (a <= 1)
     stop("Error in foo_MCP: \"a\" must be > 1")
   if (lambda < 0)
@@ -78,33 +80,34 @@ foo_MCP <- function(theta, lambda, a = 3) {
   } else {
     Q <- 0
   }
+  q <- (1-ridge)*Q + (ridge)*lambda*theta
 }
 
 q_MCP <- Vectorize(foo_MCP, "theta")
 
-q_LASSO <- function(theta, lambda) {
+q_LASSO <- function(theta, lambda, ridge) {
   if (lambda < 0) stop("Error in foo_MCP:lambda must be >= 0")
-  rep(lambda, length(theta))
+  q <- (1-ridge)*rep(lambda, length(theta)) +  (ridge)*lambda*theta
 }
 
 # Return diagonal (vector) of the penalty matrix E.
 # For family == "Mixed", Beta must be stacked as c(Beta_c, Beta_b)
-Emat <- function(Beta, lambda, eps, penalty) {
+Emat <- function(Beta, lambda, eps, penalty, ridge) {
   if (penalty == "SCAD") {
-    E <- q_SCAD(abs(Beta), lambda = lambda)/(eps + abs(Beta))
+    E <- q_SCAD(abs(Beta), lambda = lambda, ridge = ridge)/(eps + abs(Beta))
   } else if (penalty == "MCP") {
-    E <- q_MCP(abs(Beta), lambda = lambda)/(eps + abs(Beta))
+    E <- q_MCP(abs(Beta), lambda = lambda, ridge = ridge)/(eps + abs(Beta))
   } else if (penalty == "LASSO") {
-    E <- q_LASSO(abs(Beta), lambda = lambda)/(eps + abs(Beta))
+    E <- q_LASSO(abs(Beta), lambda = lambda, ridge = ridge)/(eps + abs(Beta))
   } else stop("error in Emat: Unknown penalty selected")
 }
 
 # Return the diagonal matrix of penalties E
 # For family == "Mixed", lambda = c(lambda_c, lambda_b) must be a
-#   vector of length 2
-Emat_wrap <- function(Beta, lambda, family, eps, intercept, penalty) {
+#   vector of length 2. Similarly for alpha
+Emat_wrap <- function(Beta, lambda, family, eps, intercept, penalty, ridge) {
   if (family != "Mixed") {
-    E <- diag(Emat(Beta, lambda, eps, penalty))
+    E <- diag(Emat(Beta, lambda, eps, penalty, ridge))
     if (intercept)
       E[1, 1] <- 0
     E
@@ -114,8 +117,9 @@ Emat_wrap <- function(Beta, lambda, family, eps, intercept, penalty) {
     Beta_c <- Beta[1:(k/2)]
     Beta_b <- Beta[(k/2 + 1):k]
     # lambda = (lambda_c, lambda_b)
-    E_c <- Emat(Beta_c, lambda[1], eps, penalty)
-    E_b <- Emat(Beta_b, lambda[2], eps, penalty)
+    # ridge = (ridge_c, ridge_b)
+    E_c <- Emat(Beta_c, lambda[1], eps, penalty, ridge[1])
+    E_b <- Emat(Beta_b, lambda[2], eps, penalty, ridge[2])
     if (intercept) E_c[1] <- E_b[1] <- 0  # Dont penalize intercept
     E <- diag(c(E_c, E_b))
   }

@@ -1,3 +1,9 @@
+# pgee.mixed 0.1.0.9001
+
+* Added optional ridge component.
+* Fixed bugs in examples
+* Fixed bug in init\_reset for get\_lambda\_cv\_mixed.
+
 # pgee.mixed 0.1.0.9000
 
 * changed default option for argument `lambda` to handle the default case for `family = "Mixed"`.

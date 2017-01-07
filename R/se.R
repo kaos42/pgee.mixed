@@ -9,12 +9,12 @@ nzsd <- function(x) {
 # Note that se's should be calculated using the stdized design matrices and
 #   stdized coefficients. These se's need to be unstandardized.
 sandwich.mixed <- function(y, X, Beta, alpha, lambda, N, wctype, eps,
-                           intercept, phi, penalty, weights) {
+                           intercept, phi, penalty, weights, ridge) {
 
   mu <- meanfn(X %*% Beta, family = "Mixed")
   v <- varfn(mu, family = "Mixed")
   H <- CppHess2(X, v, alpha, phi, N, weights)
-  E <- Emat_wrap(Beta, lambda, "Mixed", eps, intercept, penalty)
+  E <- Emat_wrap(Beta, lambda, "Mixed", eps, intercept, penalty, ridge)
   M <- CppM2(y, X, mu, v, alpha, phi, N, weights)
   p <- dim(H)[1]
   HE <- H + E + 1e-06 * diag(p)
@@ -25,13 +25,13 @@ sandwich.mixed <- function(y, X, Beta, alpha, lambda, N, wctype, eps,
 # As above, for standardized, hence results should be unstandardized later.
 sandwich.nonmixed <- function(y, X, Beta, alpha, lambda, N, m, family,
                               wctype, eps, intercept, phi, penalty,
-                              weights) {
+                              weights, ridge) {
 
   mu <- meanfn(X %*% Beta, family = family)
   v <- varfn(mu, family = family)
   R <- corrmat(alpha, m, wctype)
   H <- CppHess(X, v, R, phi, N, weights)
-  E <- Emat_wrap(Beta, lambda, family, eps, intercept, penalty)
+  E <- Emat_wrap(Beta, lambda, family, eps, intercept, penalty, ridge)
   M <- CppM(y, X, mu, v, R, phi, N, weights)
   p <- dim(H)[1]
   HE <- H + E + 1e-06 * diag(p)
@@ -42,13 +42,13 @@ sandwich.nonmixed <- function(y, X, Beta, alpha, lambda, N, m, family,
 # For family=="Mixed", X will be transformed. Else, X won't.
 sandwich <- function(y, X, Beta, alpha, lambda, N, m, family,
                      wctype, eps, intercept, phi, penalty,
-                     weights) {
+                     weights, ridge) {
   if (family != "Mixed") {
     sandwich.nonmixed(y, X, Beta, alpha, lambda, N, m, family,
                       wctype, eps, intercept, phi, penalty,
-                      weights)
+                      weights, ridge)
   } else {
     sandwich.mixed(y, X, Beta, alpha, lambda, N, wctype, eps,
-                   intercept, phi, penalty, weights)
+                   intercept, phi, penalty, weights, ridge)
   }
 }

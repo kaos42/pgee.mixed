@@ -201,82 +201,88 @@ alpha.est.mixed <- function(y, eta, w) {
 }
 
 #' Penalized Generalized Estimating Equations
-#'
-#' Estimate regression coefficients using Penalized Generalized Estimating
+#' 
+#' Estimate regression coefficients using Penalized Generalized Estimating 
 #' Equations (PGEEs). Linear and binary logistic models are currently supported.
 #' In particular, can handle the case of bivariate correlated mixed outcomes, in
 #' which each cluster consists of one continuous outcome and one binary outcome.
-#'
-#' \code{pgee.fit} estimates the regression coefficients for a single value of the
-#' tuning paramter (or a single pair of tuning parameters in the mixed outcomes
-#' case). To select optimal tuning parameter(s) via k-fold cross validation, see
-#' \code{cv.pgee}.
-#'
+#' 
+#' \code{pgee.fit} estimates the regression coefficients for a single value of 
+#' the tuning paramter (or a single pair of tuning parameters in the mixed 
+#' outcomes case). To select optimal tuning parameter(s) via k-fold cross 
+#' validation, see \code{cv.pgee}.
+#' 
 #' For bivariate mixed outcomes, the false discovery rate can be estimated.
-#'
+#' 
 #' @param N Number of clusters.
-#' @param m Cluster size. Assumed equal across all clusters. Should be set to 2
+#' @param m Cluster size. Assumed equal across all clusters. Should be set to 2 
 #'   for family=="Mixed".
 #' @param X Design matrix. If family=="Mixed", then design matrix for continuous
-#'   responses. For family!="Mixed", should have N*m rows. For family=="Mixed",
-#'   should have N rows. For standardize=TRUE, the first column should be a
+#'   responses. For family!="Mixed", should have N*m rows. For family=="Mixed", 
+#'   should have N rows. For standardize=TRUE, the first column should be a 
 #'   column vector of ones, corresponding to the intercept.
-#' @param Z Design matrix for binary responses for family=="Mixed". Should not
+#' @param Z Design matrix for binary responses for family=="Mixed". Should not 
 #'   be provided for other family types. If not provided for family=="Mixed", is
-#'   set equal to X. For family!="Mixed", should have N*m rows. For
-#'   family=="Mixed", should have N rows. For standardize=TRUE, the first
-#'   column should be a column vector of ones, corresponding to the intercept.
-#' @param y Response vector. Don't use this argument for family == "Mixed".
-#'   Instead, use arguments yc and yb. Since the cluster size is assumed equal
-#'   across clusters, the vector is assumed to have the form c(y_1,
+#'   set equal to X. For family!="Mixed", should have N*m rows. For 
+#'   family=="Mixed", should have N rows. For standardize=TRUE, the first column
+#'   should be a column vector of ones, corresponding to the intercept.
+#' @param y Response vector. Don't use this argument for family == "Mixed". 
+#'   Instead, use arguments yc and yb. Since the cluster size is assumed equal 
+#'   across clusters, the vector is assumed to have the form c(y_1, 
 #'   y_2,...,y_N), with y_i = c(y_i1,...,y_im).
 #' @param yc Continuous response vector. Use only for family=="Mixed".
 #' @param yb Binary (0/1) response vector. Use only for family=="Mixed".
-#' @param wctype Working correlation type; one of "Ind", "CS", or "AR1". For
+#' @param wctype Working correlation type; one of "Ind", "CS", or "AR1". For 
 #'   family=="Mixed", "CS" and "AR1" are equivalent.
-#' @param family "Gaussian", "Binomial", or "Mixed" (use the last for bivariate
-#'   mixed outcomes). Note that for "Binomial", currently only binary outcomes
+#' @param family "Gaussian", "Binomial", or "Mixed" (use the last for bivariate 
+#'   mixed outcomes). Note that for "Binomial", currently only binary outcomes 
 #'   are supported.
-#' @param lambda Tuning parameter(s). A vector of two tuning parameters should
-#'   be provided for family=="Mixed" (one for the continuous outcome
-#'   coefficients, and one of the binary outcome coefficients). Otherwise, a
-#'   single tuning parameter should be provided.
+#' @param lambda Tuning parameter(s). A two-dimensional vector should be 
+#'   provided for family=="Mixed" (one for the continuous outcome coefficients, 
+#'   and one of the binary outcome coefficients). Otherwise, a single tuning 
+#'   parameter should be provided.
 #' @param eps Disturbance in the Linear Quadratic Approximation algorithm.
-#' @param maxiter The maximum number of iterations the Newton algorithm tries
+#' @param maxiter The maximum number of iterations the Newton algorithm tries 
 #'   before declaring failure to converge.
-#' @param tol.coef Converge of the Newton algorithm is declared if two
-#'   conditions are met: The L1-norm of the difference of successive iterates
-#'   should be less than tol.coef AND the L1-norm of the penalized score should
+#' @param tol.coef Converge of the Newton algorithm is declared if two 
+#'   conditions are met: The L1-norm of the difference of successive iterates 
+#'   should be less than tol.coef AND the L1-norm of the penalized score should 
 #'   be less than tol.score.
 #' @param tol.score See \code{tol.coef}.
-#' @param init Vector of initial values for regression coefficients. For
+#' @param init Vector of initial values for regression coefficients. For 
 #'   family=="Mixed", should be c(init_c, init_b). Defaults to glm values.
 #' @param standardize Standardize the design matrices prior to estimation?
 #' @param penalty "SCAD", "MCP", or "LASSO".
-#' @param weights Vector of cluster weights. All observations in a cluster are
+#' @param weights Vector of cluster weights. All observations in a cluster are 
 #'   assumed to have the same weight.
-#' @param FDR Should the false discovery rate be estimated for family=="Mixed"?
+#' @param FDR Should the false discovery rate be estimated for family=="Mixed"? 
 #'   Currently, FDR cannot be estimated for other family types.
-#' @param fdr.corr Association parameter to use in FDR estimation. The default
+#' @param fdr.corr Association parameter to use in FDR estimation. The default 
 #'   is to use the association parameter estimated from the PGEEs.
-#' @param fdr.type Estimate the FDR for only the coefficients corresponding to
-#'   the continuous outcomes ("continuous"), for only the coefficients
-#'   corresponding to the binary outcomes ("binary"), or for all coefficients
+#' @param fdr.type Estimate the FDR for only the coefficients corresponding to 
+#'   the continuous outcomes ("continuous"), for only the coefficients 
+#'   corresponding to the binary outcomes ("binary"), or for all coefficients 
 #'   ("all", the default).
-#' @return A list
-#'   \item{coefficients}{Vector of estimated regression
-#'   coefficients. For family=="Mixed", this takes the form c(coef_c, coef_b).}
-#'   \item{vcov}{Sandwich formula based covariance matrix of estimated
-#'   regression coefficients (other than the intercept(s)). The row/column
-#'   names correspond to elements of \code{coefficients}.}
-#'   \item{phi}{Estimated dispersion parameter.}
-#'   \item{alpha}{Estimated association parameter.}
-#'   \item{num_iterations}{Number of iterations the Newton algorithm ran.}
-#'   \item{converge}{0=converged, 1=did not converge.}
-#'   \item{PenScore}{Vector of penalized score functions at the estimated
-#'   regression coefficients. If the algorithm converges, then these should be
-#'   close to zero.}
+#' @param ridge.weight Tuning parameter(s) which control the relative 
+#'   contributions from the MCP/SCAD/LASSO penalty and the ridge, or L2 penalty.
+#'   For family!="Mixed", \code{ridge.weight=0} is equivalent to MCP/SCAD/LASSO 
+#'   penalty, while \code{ridge.weight=1} would be equivalent to a ridge 
+#'   penalty. However, \code{ridge.weight=1} is not supported; 
+#'   \code{ridge.weight} may be arbitrarily close to 1, but not exactly equal to
+#'   1. For family=="Mixed", should be two-dimensional vector, with entries 
+#'   corresponding to those in \code{lambda}.
+#' @return A list \item{coefficients}{Vector of estimated regression 
+#'   coefficients. For family=="Mixed", this takes the form c(coef_c, coef_b).} 
+#'   \item{vcov}{Sandwich formula based covariance matrix of estimated 
+#'   regression coefficients (other than the intercept(s)). The row/column names
+#'   correspond to elements of \code{coefficients}.} \item{phi}{Estimated 
+#'   dispersion parameter.} \item{alpha}{Estimated association parameter.} 
+#'   \item{num_iterations}{Number of iterations the Newton algorithm ran.} 
+#'   \item{converge}{0=converged, 1=did not converge.} \item{PenScore}{Vector of
+#'   penalized score functions at the estimated regression coefficients. If the 
+#'   algorithm converges, then these should be close to zero.} 
 #'   \item{FDR}{Estimated FDR for family=="Mixed", if requested.}
+#'   \item{ridge.weight}{The ridge weight(s).}
 #' @examples
 #' set.seed(100)
 #' # Gaussian
@@ -291,7 +297,7 @@ alpha.est.mixed <- function(y, eta, w) {
 #' str(fit)
 #' fit$coefficients
 #' fit$vcov
-#'
+#' 
 #' # Binary
 #' y <- sample(0:1, N*m, replace = TRUE)
 #' fit <- pgee.fit(X = X, y = y, N = N, m = m, lambda = 0.1, wctype = "CS",
@@ -299,12 +305,12 @@ alpha.est.mixed <- function(y, eta, w) {
 #' str(fit)
 #' fit$coefficients
 #' fit$vcov
-#'
+#' 
 #' # Bivariate mixed outcomes
 #' # Generate some data
 #' Bc <- c(2.0, 3.0, 1.5, 2.0, rep(0, times = p - 4))
 #' Bb <- c(0.7, -0.7, -0.4, rep(0, times = p - 3))
-#' dat <- gen_mixed_data(Bc, Bc, N, 0.5)
+#' dat <- gen_mixed_data(Bc, Bb, N, 0.5)
 #' # Estimate regression coefficients and false discovery rate
 #' fit <- pgee.fit(X = dat$X, yc = dat$yc, yb = dat$yb, N = N, m = 2,
 #'             wctype = "CS", family = "Mixed", lambda = c(0.1, 0.05),
@@ -319,7 +325,8 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
                      eps = 1e-06, maxiter = 1000, tol.coef = 1e-03,
                      tol.score = 1e-03, init = NULL,
                      standardize = TRUE, penalty = "SCAD", weights = rep(1, N),
-                     FDR = FALSE, fdr.corr = NULL, fdr.type = "all") {
+                     FDR = FALSE, fdr.corr = NULL, fdr.type = "all",
+                     ridge.weight = switch(family, Mixed = rep(0, 2), 0)) {
 
   # Checks and basic setup ----------------------------------------------------
   valid_wc_types <- c("Ind", "CS", "AR1")
@@ -330,11 +337,15 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
   if (!(family %in% valid_family_types))
     stop("Error in pgee.fit(): Invalid family specified")
   if (family == "Mixed") {
-    if (m != 2 | length(lambda) != 2) {
-      stop("Error in pgee.fit(): Check m, lambda")
+    if (m != 2 || length(lambda) != 2 || length(ridge.weight) != 2) {
+      stop("Error in pgee.fit(): Check m, lambda, ridge.weight")
     }
   }
-
+  # check ridge weights
+  if (any(ridge.weight >= 1) || any(ridge.weight < 0)) {
+    stop("Error in pgee.fit(): ridge weights must be >=0 and < 1.")
+  }
+  
   # y checks
   if (family == "Mixed") {
     if (any(is.null(yc), is.null(yb))) {
@@ -518,7 +529,7 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
       mu <- meanfn(X %*% Beta.old, family = family)
       v <- varfn(mu, family = family)
       E <- Emat_wrap(Beta.old, lambda = lambda, family = family, eps = eps,
-                     intercept = intercept, penalty)
+                     intercept = intercept, penalty, ridge = ridge.weight)
       if (family == "Mixed") {
         H <- CppHess2(X, v, alpha_hat, phi_hat, N, weights)
         S <- CppScore2(X, v, alpha_hat, y, mu, N, phi_hat, weights)
@@ -559,6 +570,359 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
   # ---------------------------------------------------------------------------
   # Post-algorithm ------------------------------------------------------------
 
+  # Approaches to computing covariance matrix:
+  #   1. Only non-zero: This is turning out hard to implement. Work on it later
+  #   2. Everything, and get rid of intercept. Easier, doing this now.
+  #   Approach 1 --------------------------------------------------------------
+  # # Explicitly threshold
+  # nzid <- abs(Beta.new) > 1e-03
+  # Beta.new[!nzid] <- 0
+  #
+  # # Sandwich covariance matrix
+  # # Don't care about intercept
+  # if (intercept) {
+  #   nzid[1] <- FALSE
+  #   if (family == "Mixed") nzid[p.x + 1] <- FALSE
+  # }
+  # se <- sandwich(y, X[, nzid], Beta.new[nzid], alpha_hat, lambda, N, m,
+  #                family, wctype, eps, FALSE, phi_hat, penalty, weights)
+  # stopifnot(dim(se)[1] == dim(se)[2])
+  # # unstandardize, if necessary
+  # if (standardize) {
+  #   if (family != "Mixed") {
+  #     nzid2 <- nzid[-1]
+  #     stopifnot(dim(se)[2] == length(xsd[nzid2]))
+  #     se <- se / outer(xsd[nzid2], xsd[nzid2])
+  #   } else {
+  #     nzid2 <- nzid[c(-1, -(p.x + 1))]
+  #     xzsd <- c(xsd, zsd)
+  #     stopifnot(dim(se)[2] == length(xzsd[nzid2]))
+  #     se <- se / outer(xzsd[nzid2], xzsd[nzid2])
+  #   }
+  # }
+  # stopifnot(length(which(nzid)) == dim(se)[2])
+  # rownames(se) <- colnames(se) <- which(nzid)
+  # -----------------------------------------------------------------------------
+  # Approach 2
+  se <- sandwich(y, X, Beta.new, alpha_hat, lambda, N, m, family, wctype, eps, 
+                 intercept, phi_hat, penalty, weights, ridge.weight)
+  # Extract the non-intercept submatrix
+  if(intercept) {
+    if (family != "Mixed") {
+      se <- se[-1, -1]
+      se.ids <- 2:p.x
+    } else {
+      se <- se[c(-1, -(p.x+1)), c(-1, -(p.x+1))]
+      se.ids <- c(2:p.x, (p.x+2):(p.x+p.z))
+    }
+  } else {
+    if (family != "Mixed") {
+      se.ids <- 1:p.x
+    } else {
+      se.ids <- 1:(p.x+p.z)
+    }
+  }
+  # Unstandardize, if required
+  if (standardize) {
+    if (family != "Mixed") {
+      se <- se / outer(xsd, xsd)
+    } else {
+      xzsd <- c(xsd, zsd)
+      se <- se / outer(xzsd, xzsd)
+    }
+  }
+  rownames(se) <- colnames(se) <- se.ids
+  # FDR if required
+  if (FDR) {
+    # Only allowed for mixed response with intercept
+    if (family != "Mixed") {
+      print("FDR can be estimated only for family==\"Mixed\".")
+      FDRest <- NA
+    } else if (sum(ridge.weight) > 0) { # fdr not allowed for ridge, for now
+      print("Currently, FDR cannot be estimated with ridge component.")
+      FDRest <- NA
+    } else {
+      if (any(is.nan(Beta.new))) {
+        print("Warning: Can't compute FDR, NaNs in estimated coefficients")
+      } else {
+        if (is.null(fdr.corr)) fdr.corr <- alpha_hat
+        FDRest <- FDR.mixed(Beta.new, y, X, weights, lambda, fdr.corr,
+                            last.cont = , type = fdr.type)
+      }
+    }
+  } else FDRest <- NA
+
+  # unstandardize coefficients, if necessary.
+  Beta.std <- Beta.new
+  if (standardize) {
+    Beta.new <- unstandardize_coefs(Beta.new, xmean, xsd, zmean, zsd)
+  }
+
+  # return results as list
+  l <- list(coefficients = Beta.new, vcov = se, phi = phi_hat, alpha = alpha_hat,
+            num_iterations = itercount, converge = converge,
+            PenScore = penscore, FDR = FDRest, ridge.weight = ridge.weight)
+}
+
+# Estimation method, trying iterative update of association parameter
+pgee.fit.alpha <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
+                     wctype = "Ind", family = "Gaussian", 
+                     lambda = switch(family, Mixed = rep(0, 2), 0),
+                     eps = 1e-06, maxiter = 1000, tol.coef = 1e-03,
+                     tol.score = 1e-03, init = NULL,
+                     standardize = TRUE, penalty = "SCAD", weights = rep(1, N),
+                     FDR = FALSE, fdr.corr = NULL, fdr.type = "all") {
+  
+  # Checks and basic setup ----------------------------------------------------
+  valid_wc_types <- c("Ind", "CS", "AR1")
+  valid_family_types <- c("Gaussian", "Binomial", "Mixed")
+  if (!(wctype %in% valid_wc_types))
+    stop("Error in pgee.fit():
+         Invalid Working Correlation Matrix type specified")
+  if (!(family %in% valid_family_types))
+    stop("Error in pgee.fit(): Invalid family specified")
+  if (family == "Mixed") {
+    if (m != 2 | length(lambda) != 2) {
+      stop("Error in pgee.fit(): Check m, lambda")
+    }
+  }
+  
+  # y checks
+  if (family == "Mixed") {
+    if (any(is.null(yc), is.null(yb))) {
+      stop("Error in pgee.fit(): For family==\"Mixed\", use arguments yc and yb
+           as response vectors.")
+    }
+    if (!is.null(y)) {
+      warning("For family==\"Mixed\", argument y is ignored.
+              Arguments yc and yb are used as response vectors.")
+    }
+    y <- c(rbind(yc, yb))
+    } else {
+      if (is.null(y)) {
+        stop("Error in pgee.fit(): Please provide response vector using argument y.")
+      }
+      if (any(!is.null(yc), !is.null(yb))) {
+        warning("For family \"Gaussian\" or \"Binomial\", arguments yc and yb
+                are ignored. Argument y is used as the response vector.")
+      }
+      }
+  
+  # Weights, normalize
+  if (methods::hasArg(weights)) {
+    weights <- weights/sum(weights) * N
+  }
+  
+  # Force intercept to be first column
+  if (!check_intercept(X))
+    stop("Error in pgee.fit(): In design matrix X, specify the column of ones
+         for the intercept in the first column only.")
+  if (!check_intercept(Z))
+    stop("Error in pgee.fit(): In design matrix Z, specify the column of ones
+         for the intercept in the first column only.")
+  
+  # For mixed, if Z isn't provided, use X
+  if (is.null(Z) && family == "Mixed") Z <- X
+  
+  # Can't standardize if no intercept column
+  if (standardize) {
+    if (!identical(X[, 1], rep(1, dim(X)[1]))) {
+      message("Can't standardize design matrix X without
+              an intercept column. Adding it now.")
+      X <- cbind(1, X)
+    }
+    if (!is.null(Z)) {
+      if (!identical(Z[, 1], rep(1, dim(Z)[1]))) {
+        message("Can't standardize design matrix Z without
+                an intercept column. Adding it now.")
+        Z <- cbind(1, Z)
+      }
+    }
+    }
+  
+  # intercept flag, useful for Emat non-penalization of intercept
+  intercept <- identical(X[, 1], rep(1, dim(X)[1]))
+  # If X has an intercept, make sure Z has one
+  if (intercept && !standardize && !is.null(Z) &&
+      !identical(Z[, 1], rep(1, dim(Z)[1]))) {
+    stop("In pgee.fit(): For family==\"Mixed\", current implementation does not
+         support intercept for X and not for Z. Please add an intercept column
+         to Z.")
+  }
+  # ---------------------------------------------------------------------------
+  # Additional pre-algorithm setup --------------------------------------------
+  # Standardize design matrices if required
+  p.x <- dim(X)[2]
+  if (standardize) {
+    X.ustd <- X
+    Z.ustd <- Z
+    # l <- stdMat(X)
+    # X <- l$Xstd
+    # xmean <- l$cmean
+    # xsd <- l$csd
+    # try with weighted mean/sd
+    if (family == "Mixed") {
+      l <- weighted.scale(X, weights)
+    } else {
+      l <- weighted.scale(X, rep(weights, each = m))
+    }
+    
+    X <- l$Xstd
+    xmean <- l$cmean
+    xsd <- l$csd
+  }
+  if (!is.null(Z)) {
+    p.z <- dim(Z)[2]
+    if (standardize) {
+      # l <- stdMat(Z)
+      # Z <- l$Xstd
+      # zmean <- l$cmean
+      # zsd <- l$csd
+      # try with weighted mean/sd
+      l <- weighted.scale(Z, weights)
+      Z <- l$Xstd
+      zmean <- l$cmean
+      zsd <- l$csd
+    }
+  } else zmean <- zsd <- NULL
+  
+  # transform X for mixed
+  if (family == "Mixed") {
+    Xold <- X
+    X <- trans_X_mixed(X, Z)
+  }
+  
+  # Inital values
+  # wctype 'Ind'
+  Rhat <- diag(m)
+  alpha_hat <- 0
+  if (family == "Mixed") {
+    if (is.null(init)) {
+      Bn0 <- stats::glm.fit(Xold, yc, weights = weights)$coefficients
+      Bb0 <- stats::glm.fit(Z, yb, family = stats::binomial(link = "logit"),
+                            weights = weights,
+                            start = rep(0, dim(Z)[2]))$coefficients
+      Beta_init <- c(Bn0, Bb0)
+      rm(Bn0, Bb0)
+    } else {
+      Beta_init <- init
+      rm(init)
+    }
+    phi_hat <- phi.est(yc - Xold %*% Beta_init[1:p.x], p.x, weights)
+    # if (wctype != "Ind") {
+    #   # alpha estimation doesn't use dispersion, for now
+    #   alpha_hat <- alpha.est.mixed(y, X %*% Beta_init, weights)
+    # }
+    # Rhat <- corrmat(alpha_hat, m, "CS")
+  } else if (family == "Gaussian") {
+    if (is.null(init)) {
+      Beta_init <- stats::glm.fit(X, y,
+                                  weights = rep(weights, each = m))$coefficients
+    } else {
+      Beta_init <- init
+      rm(init)
+    }
+    pres <- presid.est(y, X, Beta_init, "Gaussian")
+    phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
+    # if (wctype != "Ind") {
+    #   alpha_hat <- alpha.est(pres, weights, m, p.x, phi_hat, wctype)
+    # }
+    # Rhat <- corrmat(alpha_hat, m, wctype)
+  } else {  # family == "Binomial"
+    if (is.null(init)) {
+      Beta_init <- stats::glm.fit(X, y, family = stats::binomial(link = "logit"),
+                                  weights = rep(weights, each = m),
+                                  start = rep(0, dim(X)[2]))$coefficients
+    } else {
+      Beta_init <- init
+      rm(init)
+    }
+    pres <- presid.est(y, X, Beta_init, "Binomial")
+    phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
+    # if (wctype != "Ind") {
+    #   alpha_hat <- alpha.est(pres, weights, m, length(Beta_init), phi_hat, wctype)
+    # }
+    # Rhat <- corrmat(alpha_hat, m, wctype)
+  }
+  # ---------------------------------------------------------------------------
+  # Newton iterative algorithm ------------------------------------------------
+  # NR Hessian fraction, use successively smaller if diverges
+  delta <- c(1, 0.5, 0.1, 0.05)
+  for (id in seq_along(delta)) {
+    # Reset for new run
+    Beta.new <- Beta_init
+    itercount <- 0
+    converge <- 0  # 0=converged, 1=did not converge
+    condition <- TRUE  # iterates until condition=FALSE
+    while (condition) {
+      # record old value of Beta for convergence check
+      Beta.old <- Beta.new
+      # update Beta
+      mu <- meanfn(X %*% Beta.new, family = family)
+      v <- varfn(mu, family = family)
+      E <- Emat_wrap(Beta.new, lambda = lambda, family = family, eps = eps,
+                     intercept = intercept, penalty)
+      if (family == "Mixed") {
+        H <- CppHess2(X, v, alpha_hat, phi_hat, N, weights)
+        S <- CppScore2(X, v, alpha_hat, y, mu, N, phi_hat, weights)
+      } else {
+        H <- CppHess(X, v, Rhat, phi_hat, N, weights)
+        S <- CppScore(X, v, Rhat, y, mu, N, phi_hat, weights)
+      }
+      Beta.new <- Beta.new + delta[id] * as.vector(CppIncBeta(Beta.new, S,
+                                                              H, E, N))
+      
+      # Update Pearson residuals, then update dispersion and association
+      if (family == "Mixed") {
+        if (wctype != "Ind") {
+          # alpha estimation doesn't use dispersion, for now
+          # may want to add dispersion later into alpha calculation
+          # also, no binary disperion, may want to add that too
+          phi_hat <- phi.est(yc - Xold %*% Beta.new[1:p.x], p.x, weights)
+          alpha_hat <- alpha.est.mixed(y, X %*% Beta.new, weights)
+          Rhat <- corrmat(alpha_hat, m, "CS")
+        }
+      } else if (family == "Gaussian") {
+        pres <- presid.est(y, X, Beta.new, "Gaussian")
+        phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
+        if (wctype != "Ind") {
+          alpha_hat <- alpha.est(pres, weights, m, p.x, phi_hat, wctype)
+          Rhat <- corrmat(alpha_hat, m, wctype)
+        }
+      } else {  # family == "Binomial"
+        pres <- presid.est(y, X, Beta.new, "Binomial")
+        phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
+        if (wctype != "Ind") {
+          alpha_hat <- alpha.est(pres, weights, m, length(Beta.new), phi_hat, wctype)
+          Rhat <- corrmat(alpha_hat, m, wctype)
+        }
+      }
+      
+      itercount <- itercount + 1
+      if (itercount > maxiter) {
+        warning('Did not coverge before maxiter number of iterations')
+        converge <- 1
+        break
+      }
+      penscore <- as.vector(PenScore(Beta.new, S, E, N))
+      condition <- (sum(abs(as.vector(Beta.old - Beta.new))) > tol.coef &
+                      sum(abs(penscore)) > tol.score)
+      
+      # if diverges, go to smaller delta
+      if (is.na(condition))
+        break
+    }
+    if (identical(condition, FALSE))
+      break
+  }
+  # if the smallest delta still didnt work, warning of non-convergence
+  if (id == length(delta) & ((is.na(condition)) | condition)) {
+    warning("In pgee.fit(): Beta diverges for smallest delta")
+    converge <- 1
+  }
+  # ---------------------------------------------------------------------------
+  # Post-algorithm ------------------------------------------------------------
+  
   # Approaches to computing covariance matrix:
   #   1. Only non-zero: This is turning out hard to implement. Work on it later
   #   2. Everything, and get rid of intercept. Easier, doing this now.
@@ -636,15 +1000,15 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
       }
     }
   } else FDRest <- NA
-
+  
   # unstandardize coefficients, if necessary.
   Beta.std <- Beta.new
   if (standardize) {
     Beta.new <- unstandardize_coefs(Beta.new, xmean, xsd, zmean, zsd)
   }
-
+  
   # return results as list
   l <- list(coefficients = Beta.new, vcov = se, phi = phi_hat, alpha = alpha_hat,
             num_iterations = itercount, converge = converge,
             PenScore = penscore, FDR = FDRest)
-}
+  }

@@ -91,7 +91,8 @@ lossfn_mixed <- function(y, X, Beta, type_c, type_b, marginal, Z, weights) {
 # Folds are at the cluster level, not the observation level.
 get_lambda_cv <- function(y, X, N, m, K, grid_lambda, Beta0,
                           wctype, family, eps, maxiter, tol.coef, tol.score,
-                          warm, weights, penalty, type_c, type_b) {
+                          warm, weights, penalty, type_c, type_b, 
+                          ridge.weight) {
   flds <- createFolds(c(1:N), K)
   LossMat <- matrix(, nrow = length(grid_lambda), ncol = K)
   for (j in 1:K) {
@@ -108,13 +109,14 @@ get_lambda_cv <- function(y, X, N, m, K, grid_lambda, Beta0,
     w.train <- weights[unlist(flds[-j])]
     w.test <- weights[unlist(flds[j])]
 
-    for (i in seq_along(grid_lambda)) {
+    for (i in order(grid_lambda, decreasing = TRUE)) {
       # Estimate Beta's from training set
       res.cv <- pgee.fit(X = X.train, y = y.train, N = N.train, m = m,
                      wctype = wctype, family = family, lambda = grid_lambda[i],
                      init = Beta0, penalty = penalty, weights = w.train,
                      maxiter = maxiter, tol.coef = tol.coef,
-                     tol.score = tol.score, eps = eps)
+                     tol.score = tol.score, eps = eps, 
+                     ridge.weight = ridge.weight)
       Beta.cv <- res.cv$coefficients
       # For warm start, use previous value of Beta as next initial value
       if (warm) {
@@ -144,7 +146,7 @@ get_lambda_cv <- function(y, X, N, m, K, grid_lambda, Beta0,
 get_lambda_cv_mixed <- function(y, X, N, K, grid1, grid2, init, wctype,
                                 eps, maxiter, tol.coef, tol.score,
                                 warm, type_c, type_b, marginal, Z,
-                                weights, penalty) {
+                                weights, penalty, ridge.weight) {
   flds <- createFolds(c(1:N), K)
   # The Loss matrix for single has folds in columns and grids in row.
   # To modify for mixed outcomes, we shall make each row correspond to a
@@ -205,7 +207,8 @@ get_lambda_cv_mixed <- function(y, X, N, K, grid1, grid2, init, wctype,
                        wctype = wctype, family = "Mixed",
                        lambda = c(grid1[i1], grid2[i2]), init = init,
                        penalty = penalty, weights = w.train, maxiter = maxiter,
-                       tol.coef = tol.coef, tol.score = tol.score, eps = eps)
+                       tol.coef = tol.coef, tol.score = tol.score, eps = eps,
+                       ridge.weight = ridge.weight)
         Beta.cv <- res.cv$coefficients
 
         # Warm start: Use previous value until you "cross over",
@@ -215,10 +218,10 @@ get_lambda_cv_mixed <- function(y, X, N, K, grid1, grid2, init, wctype,
             init <- init_cold
           } else {
             # reverse traversal of grids
-            if (i2 == g2)
-              init_reset <- Beta.cv  # store this for the reset of i
-            if (i2 == 1) {
-              init <- init_reset  # update the value for reset of i
+            if (grid2[i2] == max(grid2))
+              init_reset <- Beta.cv  # store this for the reset of i1
+            if (grid2[i2] == min(grid2)) {
+              init <- init_reset  # update the value for reset of i1
             } else {
               init <- Beta.cv  # usual update
             }
@@ -250,7 +253,8 @@ get_lambda_cv_mixed <- function(y, X, N, K, grid1, grid2, init, wctype,
 # Get optimal lambda via CV, then fit to entire data. Nonmixed outcomes.
 cv.pgee.nonmixed <- function(X, y, N, m, K, wctype, family, grid_lambda,
                           eps, maxiter, tol.coef, tol.score, init,
-                          penalty, warm, type_c, type_b, weights) {
+                          penalty, warm, type_c, type_b, weights,
+                          ridge.weight) {
   # checks
   stopifnot(family == "Gaussian" | family == "Binomial")
   stopifnot(length(y) == N*m)
@@ -261,13 +265,15 @@ cv.pgee.nonmixed <- function(X, y, N, m, K, wctype, family, grid_lambda,
 
   lambda.list <- get_lambda_cv(y, X, N, m, K, grid_lambda, init, wctype,
                                family, eps, maxiter, tol.coef, tol.score,
-                               warm, weights, penalty, type_c, type_b)
+                               warm, weights, penalty, type_c, type_b,
+                               ridge.weight)
   lambda.opt <- lambda.list$lambda.opt
   fit.results <- pgee.fit(X = X, y = y, N = N, m = m, wctype = wctype,
                       family = family, lambda = lambda.opt, eps = eps,
                       maxiter = maxiter, tol.coef = tol.coef,
                       tol.score = tol.score, init = init,
-                      penalty = penalty, weights = weights)
+                      penalty = penalty, weights = weights,
+                      ridge.weight = ridge.weight)
   fit.results$lambda.loss <- lambda.list$lambda.loss
   fit.results$LossMat <- lambda.list$LossMat
   fit.results
@@ -277,20 +283,24 @@ cv.pgee.nonmixed <- function(X, y, N, m, K, wctype, family, grid_lambda,
 cv.pgee.mixed <- function(X, Z = X, yc, yb, N, K, wctype, grid1, grid2,
                           eps, maxiter, tol.coef, tol.score,
                           init, penalty, warm, type_c,
-                          type_b, marginal, weights, FDR, fdr.corr, fdr.type) {
+                          type_b, marginal, weights, FDR, fdr.corr, fdr.type,
+                          ridge.weight) {
   # get both optimal lambdas
   lambda.list <- get_lambda_cv_mixed(c(rbind(yc, yb)), X, N, K, grid1, grid2,
                                      init, wctype, eps, maxiter, tol.coef,
                                      tol.score, warm, type_c,
-                                     type_b, marginal, Z, weights, penalty)
+                                     type_b, marginal, Z, weights, penalty,
+                                     ridge.weight)
   lambda <- lambda.list$lambda  # vector of length 2
   fit.results <- pgee.fit(X = X, Z = Z, yc = yc, yb = yb, N = N, m = 2,
                       wctype = wctype, family = "Mixed", lambda = lambda,
                       eps = eps, maxiter = maxiter, tol.coef = tol.coef,
                       tol.score = tol.score, init = init,
                       penalty = penalty, weights = weights, FDR = FDR,
-                      fdr.corr = fdr.corr, fdr.type = fdr.type)
+                      fdr.corr = fdr.corr, fdr.type = fdr.type,
+                      ridge.weight = ridge.weight)
   # Add avgloss of optimal lambda to results
+  fit.results$lambda <- lambda
   fit.results$lambda.loss <- lambda.list$lambda.loss
   fit.results$LossMat <- lambda.list$LossMat
   fit.results
@@ -369,6 +379,14 @@ cv.pgee.mixed <- function(X, Z = X, yc, yb, N, K, wctype, grid1, grid2,
 #'   the continuous outcomes ("continuous"), for only the coefficients
 #'   corresponding to the binary outcomes ("binary"), or for all coefficients
 #'   ("all", the default).
+#' @param ridge.weight Tuning parameter(s) which control the relative 
+#'   contributions from the MCP/SCAD/LASSO penalty and the ridge, or L2 penalty.
+#'   For family!="Mixed", \code{ridge.weight=0} is equivalent to MCP/SCAD/LASSO 
+#'   penalty, while \code{ridge.weight=1} would be equivalent to a ridge 
+#'   penalty. However, \code{ridge.weight=1} is not supported; 
+#'   \code{ridge.weight} may be arbitrarily close to 1, but not exactly equal to
+#'   1. For family=="Mixed", should be two-dimensional vector, with entries 
+#'   corresponding to those in \code{lambda}.
 #' @return A list
 #'   \item{coefficients}{Vector of estimated regression
 #'   coefficients. For family=="Mixed", this takes the form c(coef_c, coef_b).}
@@ -383,6 +401,7 @@ cv.pgee.mixed <- function(X, Z = X, yc, yb, N, K, wctype, grid1, grid2,
 #'   estimated regression coefficients. If the algorithm converges, then these
 #'   should be close to zero.}
 #'   \item{FDR}{Estimated FDR for family=="Mixed", if requested.}
+#'   \item{ridge.weight}{The ridge weight(s).}
 #'   \item{lambda.loss}{Cross validation loss (error) for the
 #'   optimal tuning parameter(s) lambda, averaged across folds.}
 #'   \item{LossMat}{Matrix of cross validation losses. Rows denote tuning
@@ -409,7 +428,7 @@ cv.pgee.mixed <- function(X, Z = X, yc, yb, N, K, wctype, grid1, grid2,
 #' # Generate some data
 #' Bc <- c(2.0, 3.0, 1.5, 2.0, rep(0,times=p-4))
 #' Bb <- c(0.7, -0.7, -0.4, rep(0,times=p-3))
-#' dat <- gen_mixed_data(Bc, Bc, N, 0.5)
+#' dat <- gen_mixed_data(Bc, Bb, N, 0.5)
 #' # We require two grids of tuning parameters
 #' gr2 <- seq(0.0001, 0.01, length.out = 100)
 #' # Estimate regression coefficients and false discovery rate
@@ -424,7 +443,8 @@ cv.pgee <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL, K = 5,
                     tol.score = 1e-03, init = NULL, standardize = TRUE,
                     penalty = "SCAD", warm = TRUE, weights = rep(1, N),
                     type_c = "square",  type_b = "deviance", marginal = 0,
-                    FDR = FALSE, fdr.corr = NULL, fdr.type = "all") {
+                    FDR = FALSE, fdr.corr = NULL, fdr.type = "all",
+                    ridge.weight = switch(family, Mixed = rep(0, 2), 0)) {
   # Checks
   valid_wc_types <- c("Ind", "CS", "AR1")
   valid_family_types <- c("Gaussian", "Binomial", "Mixed")
@@ -433,7 +453,10 @@ cv.pgee <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL, K = 5,
          Invalid Working Correlation Matrix type specified")
   if (!(family %in% valid_family_types))
     stop("Error in cv.pgee(): Invalid family specified")
-
+  # check ridge weights
+  if (any(ridge.weight >= 1) || any(ridge.weight < 0)) {
+    stop("Error in cv.pgee(): ridge weights must be >=0 and < 1.")
+  }
   # y checks
   if (family == "Mixed") {
     if (any(is.null(yc), is.null(yb))) {
@@ -489,7 +512,7 @@ cv.pgee <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL, K = 5,
                      maxiter = maxiter, tol.coef = tol.coef,
                      tol.score = tol.score, init = init, penalty = penalty,
                      warm = warm, type_c = type_c, type_b = type_b,
-                     weights = weights)
+                     weights = weights, ridge.weight = ridge.weight)
   } else if (family == "Mixed") {
     # Check both grids provied
     if(is.null(grid2)) {
@@ -502,7 +525,8 @@ cv.pgee <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL, K = 5,
                   tol.score = tol.score, init = init, penalty = penalty,
                   warm = warm, type_c = type_c, type_b = type_b,
                   marginal = marginal, weights = weights, FDR = FDR,
-                  fdr.corr = fdr.corr, fdr.type = fdr.type)
+                  fdr.corr = fdr.corr, fdr.type = fdr.type, 
+                  ridge.weight = ridge.weight)
   } else stop("Error in cv.fit(): Argument family must be either
               \"Gaussian\", \"Binomial\", or \"Mixed\". ")
 }

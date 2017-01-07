@@ -1,7 +1,7 @@
 Package: pgee.mixed
 Type: Package
 Title: Penalized Generalized Estimating Equations for Bivariate Mixed Outcomes
-Version: 0.1.0.9000
+Version: 0.1.0.9001
 Authors@R: person("Ved", "Deshpande", email = "veddeshpande@gmail.com",
                   role = c("aut", "cre"))
 Description: Perform simultaneous estimation and variable selection for correlated bivariate
