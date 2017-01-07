@@ -9,7 +9,8 @@ cv.pgee(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL, K = 5,
   maxiter = 1000, tol.coef = 0.001, tol.score = 0.001, init = NULL,
   standardize = TRUE, penalty = "SCAD", warm = TRUE, weights = rep(1,
   N), type_c = "square", type_b = "deviance", marginal = 0, FDR = FALSE,
-  fdr.corr = NULL, fdr.type = "all")
+  fdr.corr = NULL, fdr.type = "all", ridge.weight = switch(family, Mixed =
+  rep(0, 2), 0))
 }
 \arguments{
 \item{N}{Number of clusters.}
@@ -97,6 +98,15 @@ is to use the association parameter estimated from the PGEEs.}
 the continuous outcomes ("continuous"), for only the coefficients
 corresponding to the binary outcomes ("binary"), or for all coefficients
 ("all", the default).}
+
+\item{ridge.weight}{Tuning parameter(s) which control the relative 
+contributions from the MCP/SCAD/LASSO penalty and the ridge, or L2 penalty.
+For family!="Mixed", \code{ridge.weight=0} is equivalent to MCP/SCAD/LASSO 
+penalty, while \code{ridge.weight=1} would be equivalent to a ridge 
+penalty. However, \code{ridge.weight=1} is not supported; 
+\code{ridge.weight} may be arbitrarily close to 1, but not exactly equal to
+1. For family=="Mixed", should be two-dimensional vector, with entries 
+corresponding to those in \code{lambda}.}
 }
 \value{
 A list
@@ -113,6 +123,7 @@ A list
   estimated regression coefficients. If the algorithm converges, then these
   should be close to zero.}
   \item{FDR}{Estimated FDR for family=="Mixed", if requested.}
+  \item{ridge.weight}{The ridge weight(s).}
   \item{lambda.loss}{Cross validation loss (error) for the
   optimal tuning parameter(s) lambda, averaged across folds.}
   \item{LossMat}{Matrix of cross validation losses. Rows denote tuning
@@ -154,7 +165,7 @@ fit <- cv.pgee(X = X, y = y, N = N, m = m, grid1 = gr1, wctype = "CS",
 # Generate some data
 Bc <- c(2.0, 3.0, 1.5, 2.0, rep(0,times=p-4))
 Bb <- c(0.7, -0.7, -0.4, rep(0,times=p-3))
-dat <- gen_mixed_data(Bc, Bc, N, 0.5)
+dat <- gen_mixed_data(Bc, Bb, N, 0.5)
 # We require two grids of tuning parameters
 gr2 <- seq(0.0001, 0.01, length.out = 100)
 # Estimate regression coefficients and false discovery rate
