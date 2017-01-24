@@ -1,3 +1,6 @@
+# pgee.mixed 0.1.0.9002
+* fixed bug in CppM and CppM2. (w needs to be squared)
+
 # pgee.mixed 0.1.0.9001
 
 * Added optional ridge component.

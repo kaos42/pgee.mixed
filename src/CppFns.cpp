@@ -59,7 +59,7 @@ arma::mat CppM(arma::vec y, arma::mat X, arma::vec mu, arma::vec v,
         arma::vec mu_i = mu.subvec((i-1)*m, (i*m)-1);
         arma::vec e_i = diagmat(sqrt(1/v_i)) * (y_i-mu_i);
         arma::mat L_i = X_i.t() * diagmat(sqrt(v_i)) * solve(Rhat, e_i);
-        M += w(i-1) * L_i * L_i.t();
+        M += w(i-1) * w(i-1) * L_i * L_i.t();
     }
     M /= (arma::accu(w)*arma::accu(w));
     return(M);
@@ -275,7 +275,7 @@ arma::mat CppM2(arma::vec y, arma::mat X, arma::vec mu, arma::vec v,
     arma::vec y_i = y.subvec((i-1)*m, (i*m)-1);
     arma::vec mu_i = mu.subvec((i-1)*m, (i*m)-1);
     arma::mat L_i = X_i.t() * diagmat(sqrt(v_i)) * P * Rinv * P * diagmat(sqrt(1/v_i)) * (y_i-mu_i);
-    M += w(i-1) * L_i * L_i.t();
+    M += w(i-1) * w(i-1) * L_i * L_i.t();
   }
   M /= (arma::accu(w)*arma::accu(w));
   return(M);
