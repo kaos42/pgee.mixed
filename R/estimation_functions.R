@@ -458,31 +458,24 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
   # Currently estimating alpha only once, with glm estimates
   if (family == "Mixed") {
     # For now, compute correlation once from initial values
+    # Compute glm estimates and use those for alpha estimate
+    Bn0 <- stats::glm.fit(Xold, yc, weights = weights)$coefficients
+    Bb0 <- stats::glm.fit(Z, yb, family = stats::binomial(link = "logit"),
+                          weights = weights, start = rep(0, dim(Z)[2]))$coefficients
+    init_glm <- c(Bn0, Bb0)
     if (is.null(init)) {
-      Bn0 <- stats::glm.fit(Xold, yc, weights = weights)$coefficients
-      Bb0 <- stats::glm.fit(Z, yb, family = stats::binomial(link = "logit"),
-                     weights = weights,
-                     start = rep(0, dim(Z)[2]))$coefficients
-      Beta_init <- c(Bn0, Bb0)
-      rm(Bn0, Bb0)
-    } else {
-      Beta_init <- init
-      rm(init)
-    }
+      init <- init_glm
+    }     
     if (wctype != "Ind") {
       # alpha estimation doesn't use dispersion, for now
-      alpha_hat <- alpha.est.mixed(y, X %*% Beta_init, weights)
+      alpha_hat <- alpha.est.mixed(y, X %*% init_glm, weights)
     }
     Rhat <- corrmat(alpha_hat, m, "CS")
   } else if (family == "Gaussian") {
     if (is.null(init)) {
-      Beta_init <- stats::glm.fit(X, y,
-                           weights = rep(weights, each = m))$coefficients
-    } else {
-      Beta_init <- init
-      rm(init)
-    }
-    pres <- presid.est(y, X, Beta_init, "Gaussian")
+      init <- stats::glm.fit(X, y, weights = rep(weights, each = m))$coefficients
+    }     
+    pres <- presid.est(y, X, init, "Gaussian")
     phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
     if (wctype != "Ind") {
       alpha_hat <- alpha.est(pres, weights, m, p.x, phi_hat, wctype)
@@ -490,17 +483,14 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
     Rhat <- corrmat(alpha_hat, m, wctype)
   } else {  # family == "Binomial"
     if (is.null(init)) {
-      Beta_init <- stats::glm.fit(X, y, family = stats::binomial(link = "logit"),
-                           weights = rep(weights, each = m),
-                           start = rep(0, dim(X)[2]))$coefficients
-    } else {
-      Beta_init <- init
-      rm(init)
-    }
-    pres <- presid.est(y, X, Beta_init, "Binomial")
+      init <- stats::glm.fit(X, y, family = stats::binomial(link = "logit"),
+                             weights = rep(weights, each = m),
+                             start = rep(0, dim(X)[2]))$coefficients
+    }     
+    pres <- presid.est(y, X, init, "Binomial")
     phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
     if (wctype != "Ind") {
-      alpha_hat <- alpha.est(pres, weights, m, length(Beta_init), phi_hat, wctype)
+      alpha_hat <- alpha.est(pres, weights, m, length(init), phi_hat, wctype)
     }
     Rhat <- corrmat(alpha_hat, m, wctype)
   }
@@ -510,7 +500,7 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
   delta <- c(1, 0.5, 0.1, 0.05)
   for (id in seq_along(delta)) {
     # Reset for new run
-    Beta.new <- Beta_init
+    Beta.new <- init
     itercount <- 0
     converge <- 0  # 0=converged, 1=did not converge
     condition <- TRUE  # iterates until condition=FALSE
