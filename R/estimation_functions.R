@@ -465,16 +465,20 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
     init_glm <- c(Bn0, Bb0)
     if (is.null(init)) {
       init <- init_glm
-    }     
+    }
     if (wctype != "Ind") {
       # alpha estimation doesn't use dispersion, for now
+      print("Estimating alpha using GLM estimates.")
       alpha_hat <- alpha.est.mixed(y, X %*% init_glm, weights)
     }
     Rhat <- corrmat(alpha_hat, m, "CS")
+
+    print("Estimating phi using GLM estimates.")
+    phi_init <- phi.est(yc - Xold %*% Bn0, p.x, weights)
   } else if (family == "Gaussian") {
     if (is.null(init)) {
       init <- stats::glm.fit(X, y, weights = rep(weights, each = m))$coefficients
-    }     
+    }
     pres <- presid.est(y, X, init, "Gaussian")
     phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
     if (wctype != "Ind") {
@@ -486,7 +490,7 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
       init <- stats::glm.fit(X, y, family = stats::binomial(link = "logit"),
                              weights = rep(weights, each = m),
                              start = rep(0, dim(X)[2]))$coefficients
-    }     
+    }
     pres <- presid.est(y, X, init, "Binomial")
     phi_hat <- phi.est(pres, p.x, rep(weights, each = m))
     if (wctype != "Ind") {
@@ -509,7 +513,7 @@ pgee.fit <- function(N, m, X, Z = NULL, y = NULL, yc = NULL, yb = NULL,
 
       # compute continuous dispersion
       if (family == "Mixed") {
-        phi_hat <- phi.est(yc - Xold %*% Beta.old[1:p.x], p.x, weights)
+        phi_hat <- phi_init
         # bin disp assumed 1
       } else if (family == "Gaussian") {
         phi_hat <- phi.est(y - X %*% Beta.old, p.x, rep(weights, each = m))

@@ -2,54 +2,54 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 CppScore <- function(X, v, Rhat, y, mu, N, phi, w) {
-    .Call('pgee_mixed_CppScore', PACKAGE = 'pgee.mixed', X, v, Rhat, y, mu, N, phi, w)
+    .Call('_pgee_mixed_CppScore', PACKAGE = 'pgee.mixed', X, v, Rhat, y, mu, N, phi, w)
 }
 
 CppHess <- function(X, v, Rhat, phi, N, w) {
-    .Call('pgee_mixed_CppHess', PACKAGE = 'pgee.mixed', X, v, Rhat, phi, N, w)
+    .Call('_pgee_mixed_CppHess', PACKAGE = 'pgee.mixed', X, v, Rhat, phi, N, w)
 }
 
 CppM <- function(y, X, mu, v, Rhat, phi, N, w) {
-    .Call('pgee_mixed_CppM', PACKAGE = 'pgee.mixed', y, X, mu, v, Rhat, phi, N, w)
+    .Call('_pgee_mixed_CppM', PACKAGE = 'pgee.mixed', y, X, mu, v, Rhat, phi, N, w)
 }
 
 CppIncBeta <- function(beta, score, Hess, Emat, n) {
-    .Call('pgee_mixed_CppIncBeta', PACKAGE = 'pgee.mixed', beta, score, Hess, Emat, n)
+    .Call('_pgee_mixed_CppIncBeta', PACKAGE = 'pgee.mixed', beta, score, Hess, Emat, n)
 }
 
 CppAlphaCS <- function(pres, w, m, p, phi) {
-    .Call('pgee_mixed_CppAlphaCS', PACKAGE = 'pgee.mixed', pres, w, m, p, phi)
+    .Call('_pgee_mixed_CppAlphaCS', PACKAGE = 'pgee.mixed', pres, w, m, p, phi)
 }
 
 CppAlphaAR1 <- function(pres, w, m, p, phi) {
-    .Call('pgee_mixed_CppAlphaAR1', PACKAGE = 'pgee.mixed', pres, w, m, p, phi)
+    .Call('_pgee_mixed_CppAlphaAR1', PACKAGE = 'pgee.mixed', pres, w, m, p, phi)
 }
 
 PenScore <- function(beta, score, Emat, n) {
-    .Call('pgee_mixed_PenScore', PACKAGE = 'pgee.mixed', beta, score, Emat, n)
+    .Call('_pgee_mixed_PenScore', PACKAGE = 'pgee.mixed', beta, score, Emat, n)
 }
 
 samemats <- function(X, Y) {
-    .Call('pgee_mixed_samemats', PACKAGE = 'pgee.mixed', X, Y)
+    .Call('_pgee_mixed_samemats', PACKAGE = 'pgee.mixed', X, Y)
 }
 
 CppW <- function(X, v, Rhat, N) {
-    .Call('pgee_mixed_CppW', PACKAGE = 'pgee.mixed', X, v, Rhat, N)
+    .Call('_pgee_mixed_CppW', PACKAGE = 'pgee.mixed', X, v, Rhat, N)
 }
 
 CppHess2 <- function(X, v, alpha, phi, N, w) {
-    .Call('pgee_mixed_CppHess2', PACKAGE = 'pgee.mixed', X, v, alpha, phi, N, w)
+    .Call('_pgee_mixed_CppHess2', PACKAGE = 'pgee.mixed', X, v, alpha, phi, N, w)
 }
 
 CppScore2 <- function(X, v, alpha, y, mu, N, phi, w) {
-    .Call('pgee_mixed_CppScore2', PACKAGE = 'pgee.mixed', X, v, alpha, y, mu, N, phi, w)
+    .Call('_pgee_mixed_CppScore2', PACKAGE = 'pgee.mixed', X, v, alpha, y, mu, N, phi, w)
 }
 
 CppM2 <- function(y, X, mu, v, alpha, phi, N, w) {
-    .Call('pgee_mixed_CppM2', PACKAGE = 'pgee.mixed', y, X, mu, v, alpha, phi, N, w)
+    .Call('_pgee_mixed_CppM2', PACKAGE = 'pgee.mixed', y, X, mu, v, alpha, phi, N, w)
 }
 
 CppW2 <- function(X, v, Rhat, N, w) {
-    .Call('pgee_mixed_CppW2', PACKAGE = 'pgee.mixed', X, v, Rhat, N, w)
+    .Call('_pgee_mixed_CppW2', PACKAGE = 'pgee.mixed', X, v, Rhat, N, w)
 }
 
